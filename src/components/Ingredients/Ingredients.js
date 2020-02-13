@@ -1,12 +1,30 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useReducer } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
 import Search from "./Search";
 import ErrorModal from "../UI/ErrorModal";
 
+const ingredientReducer = (currentState, action) => {
+  switch (action.type) {
+    case "SET":
+      return action.ingredients;
+      break;
+    case "ADD":
+      return [...currentState, action.ingredient];
+      break;
+    case "DELETE":
+      return currentState.filter(ing => ing.id !== action.id);
+      break;
+    default:
+      throw new Error("Error");
+      break;
+  }
+};
+
 const Ingredients = () => {
-  const [userIngredients, setUserIngredients] = useState([]);
+  const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
+  //const [userIngredients, setUserIngredients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -40,10 +58,14 @@ const Ingredients = () => {
         return response.json();
       })
       .then(responseData => {
-        setUserIngredients(prevIngredients => [
+        /* setUserIngredients(prevIngredients => [
           ...prevIngredients,
           { id: responseData.name, ...ingredient }
-        ]);
+        ]); */
+        dispatch({
+          type: "ADD",
+          ingredient: { id: responseData.name, ...ingredient }
+        });
       })
       .catch(err => {
         setError("Something went wrong", err.message);
@@ -54,16 +76,17 @@ const Ingredients = () => {
   const removeIngredientHandler = ingredientId => {
     setLoading(true);
     fetch(
-      `https://react-hooks-35b6b.firebaseio.com/ingredients/${ingredientId}.jon`,
+      `https://react-hooks-35b6b.firebaseio.com/ingredients/${ingredientId}.json`,
       {
         method: "DELETE"
       }
     )
       .then(response => {
         setLoading(false);
-        setUserIngredients(prevIngredients =>
+        /*  setUserIngredients(prevIngredients =>
           prevIngredients.filter(ingredient => ingredient.id !== ingredientId)
-        );
+        ); */
+        dispatch({ type: "DELETE", id: ingredientId });
       })
       .catch(error => {
         setError("Something went wrong", error.message);
@@ -74,9 +97,10 @@ const Ingredients = () => {
 
   const filteredIngredientsHandler = useCallback(
     filteredIngredients => {
-      setUserIngredients(filteredIngredients);
-    },
-    [setUserIngredients]
+      //setUserIngredients(filteredIngredients);
+      dispatch({ type: "SET", ingredients: filteredIngredients });
+    }
+    //[setUserIngredients]
   );
 
   const clearError = () => {
