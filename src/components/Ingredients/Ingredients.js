@@ -3,9 +3,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
 import Search from "./Search";
+import ErrorModal from "../UI/ErrorModal";
 
 const Ingredients = () => {
   const [userIngredients, setUserIngredients] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   /*   useEffect(() => {
     fetch("https://react-hooks-35b6b.firebaseio.com/ingredients.json")
@@ -24,6 +27,7 @@ const Ingredients = () => {
   }, []); */
 
   const addIngredientHandler = ingredient => {
+    setLoading(true);
     fetch("https://react-hooks-35b6b.firebaseio.com/ingredients.json", {
       method: "POST",
       body: JSON.stringify(ingredient),
@@ -32,6 +36,7 @@ const Ingredients = () => {
       }
     })
       .then(response => {
+        setLoading(false);
         return response.json();
       })
       .then(responseData => {
@@ -41,21 +46,30 @@ const Ingredients = () => {
         ]);
       })
       .catch(err => {
+        setError("Something went wrong", err.message);
         console.log(err);
       });
   };
 
   const removeIngredientHandler = ingredientId => {
+    setLoading(true);
     fetch(
-      `https://react-hooks-35b6b.firebaseio.com/ingredients/${ingredientId}.json`,
+      `https://react-hooks-35b6b.firebaseio.com/ingredients/${ingredientId}.jon`,
       {
         method: "DELETE"
       }
-    ).then(response => {
-      setUserIngredients(prevIngredients =>
-        prevIngredients.filter(ingredient => ingredient.id !== ingredientId)
-      );
-    });
+    )
+      .then(response => {
+        setLoading(false);
+        setUserIngredients(prevIngredients =>
+          prevIngredients.filter(ingredient => ingredient.id !== ingredientId)
+        );
+      })
+      .catch(error => {
+        setError("Something went wrong", error.message);
+        setLoading(false);
+        console.log(error);
+      });
   };
 
   const filteredIngredientsHandler = useCallback(
@@ -65,10 +79,17 @@ const Ingredients = () => {
     [setUserIngredients]
   );
 
+  const clearError = () => {
+    setError(null);
+  };
+
   return (
     <div className="App">
-      <IngredientForm onAddImgredient={addIngredientHandler} />
-
+      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+      <IngredientForm
+        onAddImgredient={addIngredientHandler}
+        loading={loading}
+      />
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
         <IngredientList
