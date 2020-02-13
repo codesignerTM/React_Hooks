@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -7,7 +7,7 @@ import Search from "./Search";
 const Ingredients = () => {
   const [userIngredients, setUserIngredients] = useState([]);
 
-  useEffect(() => {
+  /*   useEffect(() => {
     fetch("https://react-hooks-35b6b.firebaseio.com/ingredients.json")
       .then(response => response.json())
       .then(resonseData => {
@@ -21,7 +21,7 @@ const Ingredients = () => {
         }
         setUserIngredients(loadedIngredients);
       });
-  }, []);
+  }, []); */
 
   const addIngredientHandler = ingredient => {
     fetch("https://react-hooks-35b6b.firebaseio.com/ingredients.json", {
@@ -51,9 +51,12 @@ const Ingredients = () => {
     );
   };
 
-  const filteredIngredientsHandler = filteredIngredients => {
-    setUserIngredients(filteredIngredients);
-  };
+  const filteredIngredientsHandler = useCallback(
+    filteredIngredients => {
+      setUserIngredients(filteredIngredients);
+    },
+    [setUserIngredients]
+  );
 
   return (
     <div className="App">
