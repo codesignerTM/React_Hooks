@@ -99,8 +99,8 @@ const Ingredients = () => {
     filteredIngredients => {
       //setUserIngredients(filteredIngredients);
       dispatch({ type: "SET", ingredients: filteredIngredients });
-    }
-    //[setUserIngredients]
+    },
+    [dispatch]
   );
 
   const clearError = () => {
