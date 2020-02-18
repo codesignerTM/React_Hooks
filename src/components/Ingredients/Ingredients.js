@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useReducer } from "react";
+import React, { useState, useCallback, useReducer } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -9,24 +9,39 @@ const ingredientReducer = (currentState, action) => {
   switch (action.type) {
     case "SET":
       return action.ingredients;
-      break;
     case "ADD":
       return [...currentState, action.ingredient];
-      break;
     case "DELETE":
       return currentState.filter(ing => ing.id !== action.id);
-      break;
     default:
       throw new Error("Error");
-      break;
+  }
+};
+
+const httpReducer = (curHttpState, action) => {
+  switch (action.type) {
+    case "SEND":
+      return { loading: true, error: null };
+    case "RESPONSE":
+      return { ...curHttpState, loading: false };
+    case "ERROR":
+      return { loading: false, error: action.errorMessage };
+    case "CLEAR":
+      return { ...curHttpState, error: null };
+    default:
+      throw new Error("Error");
   }
 };
 
 const Ingredients = () => {
   const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
+  const [httpState, dispatchHttp] = useReducer(httpReducer, {
+    loading: false,
+    error: null
+  });
   //const [userIngredients, setUserIngredients] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  //const [loading, setLoading] = useState(false);
+  //const [error, setError] = useState(null);
 
   /*   useEffect(() => {
     fetch("https://react-hooks-35b6b.firebaseio.com/ingredients.json")
@@ -45,7 +60,8 @@ const Ingredients = () => {
   }, []); */
 
   const addIngredientHandler = ingredient => {
-    setLoading(true);
+    dispatchHttp({ type: "SEND" });
+    //setLoading(true);
     fetch("https://react-hooks-35b6b.firebaseio.com/ingredients.json", {
       method: "POST",
       body: JSON.stringify(ingredient),
@@ -54,7 +70,8 @@ const Ingredients = () => {
       }
     })
       .then(response => {
-        setLoading(false);
+        //setLoading(false);
+        dispatchHttp({ type: "RESPONSE" });
         return response.json();
       })
       .then(responseData => {
@@ -68,13 +85,15 @@ const Ingredients = () => {
         });
       })
       .catch(err => {
-        setError("Something went wrong", err.message);
+        dispatchHttp({ type: "ERROR", errorMessage: "Something went wrong" });
+        //setError("Something went wrong", err.message);
         console.log(err);
       });
   };
 
   const removeIngredientHandler = ingredientId => {
-    setLoading(true);
+    //setLoading(true);
+    dispatchHttp({ type: "SEND" });
     fetch(
       `https://react-hooks-35b6b.firebaseio.com/ingredients/${ingredientId}.json`,
       {
@@ -82,15 +101,17 @@ const Ingredients = () => {
       }
     )
       .then(response => {
-        setLoading(false);
+        dispatchHttp({ type: "RESPONSE" });
+        //setLoading(false);
         /*  setUserIngredients(prevIngredients =>
           prevIngredients.filter(ingredient => ingredient.id !== ingredientId)
         ); */
         dispatch({ type: "DELETE", id: ingredientId });
       })
       .catch(error => {
-        setError("Something went wrong", error.message);
-        setLoading(false);
+        dispatchHttp({ type: "ERROR", errorMessage: "Something went wrong" });
+        //setError("Something went wrong", error.message);
+        //setLoading(false);
         console.log(error);
       });
   };
@@ -104,15 +125,18 @@ const Ingredients = () => {
   );
 
   const clearError = () => {
-    setError(null);
+    //setError(null);
+    dispatchHttp({ type: "CLEAR" });
   };
 
   return (
     <div className="App">
-      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+      {httpState.error && (
+        <ErrorModal onClose={clearError}>{httpState.error}</ErrorModal>
+      )}
       <IngredientForm
         onAddImgredient={addIngredientHandler}
-        loading={loading}
+        loading={httpState.loading}
       />
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
